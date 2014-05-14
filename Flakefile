@@ -1,0 +1,28 @@
+var _ = require('underscore')
+var flake = require('./flake');
+var uglify_js = require('uglify-js')
+var coffe_js = require('coffee-script')
+var zlib_js = require('compress-buffer');
+
+function concat(input) {
+    return _.reduce(_.flatten(input), function(a,b){return a + b;});
+}
+
+function uglify(input, names, options) {
+    options = options || {};
+    options.fromString = true;
+    return uglify_js.minify(input[0][0], options).code;
+}
+
+function coffee(input, names) {
+    return coffe_js.compile(input[0][0], {filename: names[0][0]});
+}
+
+function gzip(input) {
+   return zlib_js.compress(new Buffer(input[0][0], 'utf8'), 9);
+}
+
+flake.rule('{name}.min.js', '{name}.js', uglify);
+flake.rule('{name}.gz', '{name}', gzip);
+flake.rule('dst/{name}.js', 'src/{name}.coffee', coffee);
+flake.build_and_save(process.argv[2] || 'dst/app.min.js.gz', ['src', 'dst']);
